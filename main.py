@@ -1,15 +1,17 @@
 from fastapi import FastAPI, UploadFile, File, HTTPException
+from pydantic import BaseModel
 import pdfplumber
 import requests
-import io
+from io import BytesIO
 
 app = FastAPI()
 
+# Health check
 @app.get("/ping")
 async def ping():
     return {"status": "ok"}
 
-# Extract from uploaded file
+# Upload a PDF file
 @app.post("/extract_resume_text/")
 async def extract_resume_text(file: UploadFile = File(...)):
     if not file.filename.lower().endswith(".pdf"):
@@ -23,19 +25,11 @@ async def extract_resume_text(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Extract from a URL
+# JSON input for URL
+class UrlRequest(BaseModel):
+    url: str
+
 @app.post("/extract_resume_text_from_url/")
-async def extract_resume_text_from_url(url: str):
+async def extract_resume_text_from_url(request: UrlRequest):
     try:
-        response = requests.get(url)
-        response.raise_for_status()
-        file_bytes = io.BytesIO(response.content)
-
-        text = ""
-        with pdfplumber.open(file_bytes) as pdf:
-            for page in pdf.pages:
-                text += page.extract_text() or ""
-
-        return {"resume_text": text[:18000], "empty": len(text.strip()) == 0}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        res
